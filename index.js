@@ -3,8 +3,10 @@ const express = require('express');
 const { Client } = require('ssh2');
 const { logEvent } = require('./logger');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 // Helper to execute a script via SSH
@@ -44,9 +46,9 @@ function executeFixedScript({ host, port = 22, args = [] }, res, endpoint) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   let scriptPath;
-  if (endpoint === 'getMartSummary') scriptPath = '/path/to/mart_summary.sh';
-  else if (endpoint === 'getManagerSummary') scriptPath = '/path/to/manager_summary.sh';
-  else if (endpoint === 'getWorkerSummary') scriptPath = '/path/to/worker_summary.sh';
+  if (endpoint === 'getMartSummary') scriptPath = '/tmp/WBAdminUIInfo.sh';
+  else if (endpoint === 'getManagerSummary') scriptPath = '/tmp/WBAdminUIInfo.sh';
+  else if (endpoint === 'getWorkerSummary') scriptPath = '/tmp/WBAdminUIInfo.sh';
   else return res.status(400).json({ error: 'Invalid endpoint' });
   // Sanitize args to prevent command injection (basic)
   const safeArgs = Array.isArray(args) ? args.map(a => `'${String(a).replace(/'/g, "'\''")}'`).join(' ') : '';
