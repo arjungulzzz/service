@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const { Client } = require('ssh2');
 const { logEvent } = require('./logger');
@@ -35,11 +36,18 @@ function executeRemoteScript({ host, port = 22, username, password, script }, re
 }
 
 // Helper to execute a fixed script via SSH with arguments
-function executeFixedScript({ host, port = 22, username, password, scriptPath, args = [] }, res, endpoint) {
-  if (!host || !username || !password || !scriptPath) {
+function executeFixedScript({ host, port = 22, args = [] }, res, endpoint) {
+  const username = process.env.SSH_USERNAME;
+  const password = process.env.SSH_PASSWORD;
+  if (!host || !username || !password || !endpoint) {
     logEvent('error', { endpoint, host, username, error: 'Missing required fields' });
     return res.status(400).json({ error: 'Missing required fields' });
   }
+  let scriptPath;
+  if (endpoint === 'getMartSummary') scriptPath = '/path/to/mart_summary.sh';
+  else if (endpoint === 'getManagerSummary') scriptPath = '/path/to/manager_summary.sh';
+  else if (endpoint === 'getWorkerSummary') scriptPath = '/path/to/worker_summary.sh';
+  else return res.status(400).json({ error: 'Invalid endpoint' });
   // Sanitize args to prevent command injection (basic)
   const safeArgs = Array.isArray(args) ? args.map(a => `'${String(a).replace(/'/g, "'\''")}'`).join(' ') : '';
   const command = `${scriptPath} ${safeArgs}`;
@@ -102,21 +110,15 @@ app.post('/run-script', (req, res) => {
 });
 
 app.post('/getMartSummary', (req, res) => {
-  // Fixed script path for mart summary
-  const scriptPath = '/path/to/mart_summary.sh'; // Change to your actual script path
-  executeFixedScript({ ...req.body, scriptPath }, res, 'getMartSummary');
+  executeFixedScript({ host: req.body.host, port: req.body.port, args: req.body.args }, res, 'getMartSummary');
 });
 
 app.post('/getManagerSummary', (req, res) => {
-  // Fixed script path for manager summary
-  const scriptPath = '/path/to/manager_summary.sh'; // Change to your actual script path
-  executeFixedScript({ ...req.body, scriptPath }, res, 'getManagerSummary');
+  executeFixedScript({ host: req.body.host, port: req.body.port, args: req.body.args }, res, 'getManagerSummary');
 });
 
 app.post('/getWorkerSummary', (req, res) => {
-  // Fixed script path for worker summary
-  const scriptPath = '/path/to/worker_summary.sh'; // Change to your actual script path
-  executeFixedScript({ ...req.body, scriptPath }, res, 'getWorkerSummary');
+  executeFixedScript({ host: req.body.host, port: req.body.port, args: req.body.args }, res, 'getWorkerSummary');
 });
 
 const PORT = process.env.PORT || 3000;
