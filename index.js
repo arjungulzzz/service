@@ -21,6 +21,7 @@ function executeFixedScript({ host, port = 22, args = [] }, res, endpoint) {
   if (endpoint === 'getMartSummary') scriptPath = '/tmp/WBAdminUIInfo.sh';
   else if (endpoint === 'getManagerSummary') scriptPath = '/tmp/WBAdminUIInfo.sh';
   else if (endpoint === 'getWorkerSummary') scriptPath = '/tmp/WBAdminUIInfo.sh';
+  else if (endpoint === 'getServerSummary') scriptPath = '/tmp/wb_server_info_json.sh';
   else return res.status(400).json({ error: 'Invalid endpoint' });
   // Sanitize args to prevent command injection (basic)
   const safeArgs = Array.isArray(args) ? args.map(a => `'${String(a).replace(/'/g, "'\''")}'`).join(' ') : '';
@@ -63,6 +64,10 @@ app.post('/getManagerSummary', (req, res) => {
 
 app.post('/getWorkerSummary', (req, res) => {
   executeFixedScript({ host: req.body.host, port: req.body.port, args: req.body.args }, res, 'getWorkerSummary');
+});
+
+app.post('/getServerSummary', (req, res) => {
+  executeFixedScript({ host: req.body.host, port: req.body.port, args: req.body.args }, res, 'getServerSummary');
 });
 
 const PORT = process.env.PORT || 3000;
