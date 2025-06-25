@@ -13,9 +13,21 @@ app.use(express.json());
 function executeFixedScript({ host, port = 22, args = [] }, res, endpoint) {
   const username = process.env.SSH_USERNAME;
   const password = process.env.SSH_PASSWORD;
-  if (!host || !username || !password || !endpoint) {
-    logEvent('error', { endpoint, host, username, error: 'Missing required fields' });
-    return res.status(400).json({ error: 'Missing required fields' });
+  if (!host) {
+    logEvent('error', { endpoint, host, username, error: 'Missing required field: host' });
+    return res.status(400).json({ error: 'Missing required field: host' });
+  }
+  if (!username) {
+    logEvent('error', { endpoint, host, username, error: 'Missing SSH username (check .env)' });
+    return res.status(400).json({ error: 'Missing SSH username (check .env)' });
+  }
+  if (!password) {
+    logEvent('error', { endpoint, host, username, error: 'Missing SSH password (check .env)' });
+    return res.status(400).json({ error: 'Missing SSH password (check .env)' });
+  }
+  if (!endpoint) {
+    logEvent('error', { endpoint, host, username, error: 'Missing required field: endpoint' });
+    return res.status(400).json({ error: 'Missing required field: endpoint' });
   }
   let scriptPath;
   if (endpoint === 'getMartSummary') scriptPath = '/tmp/WBAdminUIInfo.sh';
