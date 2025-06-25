@@ -9,34 +9,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Helper to execute a script via SSH
-function executeRemoteScript({ host, port = 22, username, password, script }, res) {
-  if (!host || !username || !password || !script) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-  const conn = new Client();
-  conn.on('ready', () => {
-    conn.exec(script, (err, stream) => {
-      if (err) {
-        conn.end();
-        return res.status(500).json({ error: err.message });
-      }
-      let stdout = '';
-      let stderr = '';
-      stream.on('close', (code, signal) => {
-        conn.end();
-        res.json({ stdout, stderr, code, signal });
-      }).on('data', (data) => {
-        stdout += data;
-      }).stderr.on('data', (data) => {
-        stderr += data;
-      });
-    });
-  }).on('error', (err) => {
-    res.status(500).json({ error: err.message });
-  }).connect({ host, port, username, password });
-}
-
 // Helper to execute a fixed script via SSH with arguments
 function executeFixedScript({ host, port = 22, args = [] }, res, endpoint) {
   const username = process.env.SSH_USERNAME;
@@ -80,36 +52,6 @@ function executeFixedScript({ host, port = 22, args = [] }, res, endpoint) {
     res.status(500).json({ error: err.message });
   }).connect({ host, port, username, password });
 }
-
-// Example endpoint: POST /run-script
-// Body: { host, port, username, password, script }
-app.post('/run-script', (req, res) => {
-  const { host, port = 22, username, password, script } = req.body;
-  if (!host || !username || !password || !script) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-  const conn = new Client();
-  conn.on('ready', () => {
-    conn.exec(script, (err, stream) => {
-      if (err) {
-        conn.end();
-        return res.status(500).json({ error: err.message });
-      }
-      let stdout = '';
-      let stderr = '';
-      stream.on('close', (code, signal) => {
-        conn.end();
-        res.json({ stdout, stderr, code, signal });
-      }).on('data', (data) => {
-        stdout += data;
-      }).stderr.on('data', (data) => {
-        stderr += data;
-      });
-    });
-  }).on('error', (err) => {
-    res.status(500).json({ error: err.message });
-  }).connect({ host, port, username, password });
-});
 
 app.post('/getMartSummary', (req, res) => {
   executeFixedScript({ host: req.body.host, port: req.body.port, args: req.body.args }, res, 'getMartSummary');
